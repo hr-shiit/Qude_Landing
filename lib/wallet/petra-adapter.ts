@@ -29,15 +29,18 @@ interface PetraWallet {
   }>;
   disconnect(): Promise<void>;
   isConnected(): Promise<boolean>;
-  getAccount(): Promise<string>;
-  getNetwork(): Promise<{
+  account(): Promise<{
+    address: string;
+    publicKey: string;
+  }>;
+  network(): Promise<{
     name: string;
     chainId: string;
     url: string;
   }>;
   onAccountChange(callback: (account: string) => void): void;
   onNetworkChange(callback: (network: any) => void): void;
-  removeAllListeners(): void;
+  removeAllListeners?(): void;
 }
 
 // Global window interface extension
@@ -65,7 +68,15 @@ export class PetraWalletAdapter implements WalletAdapter {
   private detectWallet(): void {
     // Check for Petra wallet in different possible locations
     if (typeof window !== 'undefined') {
-      this.wallet = window.aptos || window.petra || null;
+      // Wait for wallet to be available
+      this.wallet = window.aptos || null;
+      
+      // If not immediately available, try again after a short delay
+      if (!this.wallet) {
+        setTimeout(() => {
+          this.wallet = window.aptos || null;
+        }, 100);
+      }
     }
   }
 
@@ -96,6 +107,10 @@ export class PetraWalletAdapter implements WalletAdapter {
             throw new WalletNotInstalledError();
           }
 
+          // Debug: Log wallet detection
+          console.log('Petra wallet detected:', !!this.wallet);
+          console.log('Wallet object:', this.wallet);
+
           // Set up connection timeout
           const connectPromise = this.wallet.connect();
           const timeoutPromise = new Promise((_, reject) => {
@@ -103,10 +118,13 @@ export class PetraWalletAdapter implements WalletAdapter {
           });
 
           // Race between connection and timeout
+          console.log('Attempting to connect to Petra wallet...');
           const result = await Promise.race([connectPromise, timeoutPromise]) as {
             address: string;
             publicKey: string;
           };
+
+          console.log('Connection result:', result);
 
           // Get current network
           const networkInfo = await this.getNetwork();
@@ -219,8 +237,8 @@ export class PetraWalletAdapter implements WalletAdapter {
         return null;
       }
 
-      const account = await this.wallet.getAccount();
-      return account || null;
+      const accountInfo = await this.wallet.account();
+      return accountInfo?.address || null;
     } catch (error) {
       console.error('Error getting account:', error);
       return null;
@@ -236,7 +254,7 @@ export class PetraWalletAdapter implements WalletAdapter {
         return 'unknown';
       }
 
-      const networkInfo = await this.wallet.getNetwork();
+      const networkInfo = await this.wallet.network();
       return networkInfo.name || networkInfo.chainId || 'unknown';
     } catch (error) {
       console.error('Error getting network:', error);

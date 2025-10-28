@@ -8,7 +8,12 @@ export const metadata = {
   title: "Tesserapt — Next-Generation Borrowing Aggregator on Aptos",
   description:
     "Tesserapt is a borrowing aggregator protocol on Aptos for executing the Buy Borrow Die (BBD) strategy with xBTC tokens. Stake, borrow, and refinance with Petra Wallet integration.",
-    generator: 'v0.app'
+  generator: 'v0.app',
+  icons: {
+    icon: '/images/logof1.png',
+    shortcut: '/images/logof1.png',
+    apple: '/images/logof1.png',
+  }
 }
 
 export default function RootLayout({

@@ -8,8 +8,15 @@ export default function Home() {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 w-full z-50 bg-black/90 backdrop-blur border-b border-white">
         <div className="container mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold tracking-tighter">
-            TESSERAPT
+          <Link href="/" className="flex items-center gap-3">
+            <Image
+              src="/images/logof1.png"
+              alt="Tesserapt Logo"
+              width={30}
+              height={30}
+              className="object-contain"
+            />
+            <span className="text-xl font-bold tracking-tighter">TESSERAPT</span>
           </Link>
           <div className="flex items-center gap-6">
             <Link href="/community" className="text-sm uppercase tracking-widest hover:text-red-600 transition-colors">
@@ -42,9 +49,9 @@ export default function Home() {
           </div>
 
           <div className="col-span-12 md:col-span-5 flex flex-col items-center justify-start gap-6">
-            <div className="relative w-full aspect-square bg-black overflow-hidden">
+            <div className="relative w-full aspect-square bg-black overflow-hidden rounded-lg">
               <Image
-                src="/images/ttlogo.png"
+                src="/images/logof1.png"
                 alt="Tesserapt logo"
                 fill
                 className="object-contain"

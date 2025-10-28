@@ -27,11 +27,11 @@ export default function Home() {
         <div className="grid grid-cols-12 gap-4 items-start">
           <div className="col-span-12 md:col-span-7 mb-8 md:mb-0">
             <h1 className="text-8xl md:text-9xl font-bold tracking-tighter leading-none mb-6 text-pretty">
-              YOUR
+              P*NDLE
               <br />
-              MONEY
+              ON APTOS
               <br />
-              MATTERS
+              BUT BETTER.
             </h1>
             <p className="text-xl max-w-xl mb-4">
               AI-powered DeFi yield maximizer with native lending on Aptos.

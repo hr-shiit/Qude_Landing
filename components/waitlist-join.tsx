@@ -9,7 +9,7 @@ const ENDPOINT =
   "https://script.google.com/macros/s/AKfycbzmYjWWcvYYTIzo-vaYQtRJ9XCHJV_GUzYZS_xfwsgngfDRseuXTP4ItdbZ5irMi0oU/exec"
 
 function WaitlistJoinInner() {
-  const [mode, setMode] = useState<"closed" | "waitlist" | "wallet">("closed")
+  const [mode, setMode] = useState<"closed" | "waitlist">("closed")
   const [email, setEmail] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [message, setMessage] = useState<string | null>(null)
@@ -37,13 +37,17 @@ function WaitlistJoinInner() {
 
   async function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault()
-    if (!email) return
+    if (!email || !isConnected || !account) return
+    
     setStatus("loading")
     setMessage(null)
+    
     try {
-      const payload = mode === "wallet" 
-        ? { email, walletAddress: account, type: "wallet" }
-        : { email, type: "waitlist" }
+      const payload = { 
+        email, 
+        walletAddress: account, 
+        type: "waitlist_with_wallet" 
+      }
       
       const res = await fetch(ENDPOINT, {
         method: "POST",
@@ -51,12 +55,10 @@ function WaitlistJoinInner() {
         body: JSON.stringify(payload),
         mode: "no-cors", // Apps Script often requires no-cors for anonymous writes
       })
+      
       // In no-cors, we can't read response. Assume success.
       setStatus("success")
-      const successMessage = mode === "wallet" 
-        ? "Thanks! We'll be in touch soon"
-        : "Thanks for joining, We'll start digging soon"
-      setMessage(successMessage)
+      setMessage("Thanks! We'll be in touch soon with early access details.")
       setEmail("")
       setMode("closed")
     } catch (err) {
@@ -85,27 +87,14 @@ function WaitlistJoinInner() {
   return (
     <div className="w-full max-w-md">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold">
-          {mode === "waitlist" ? "Join Waitlist" : "Connect Wallet"}
-        </h3>
-        <div className="flex items-center gap-3">
-          {mode === "waitlist" && (
-            <button
-              onClick={() => setMode("wallet")}
-              className="px-4 py-2 bg-transparent border border-white text-white text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-colors"
-              aria-label="Connect Wallet"
-            >
-              Connect Wallet
-            </button>
-          )}
-          <button
-            onClick={() => setMode("closed")}
-            className="text-white/60 hover:text-white text-xl"
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
+        <h3 className="text-lg font-bold">Join Waitlist</h3>
+        <button
+          onClick={() => setMode("closed")}
+          className="text-white/60 hover:text-white text-xl"
+          aria-label="Close"
+        >
+          ×
+        </button>
       </div>
       
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -124,78 +113,79 @@ function WaitlistJoinInner() {
           />
         </div>
         
-        {mode === "wallet" && (
-          <div className="space-y-4">
-            {/* Wallet Connection Section */}
-            <div className="border border-white/20 rounded-lg p-4">
-              <h4 className="text-sm font-semibold text-white mb-3">Petra Wallet</h4>
-              
-              {!isConnected ? (
-                <div className="space-y-3">
-                  <button
-                    onClick={handleWalletConnect}
-                    disabled={isConnecting}
-                    className="w-full px-4 py-3 bg-transparent border border-white text-white text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isConnecting ? "Connecting..." : "Connect Petra Wallet"}
-                  </button>
-                  
-                  {walletError && (
-                    <div className="text-red-400 text-xs p-2 border border-red-400/20 rounded">
-                      {walletError}
-                      <button
-                        onClick={clearError}
-                        className="ml-2 underline hover:no-underline"
-                      >
-                        Dismiss
-                      </button>
-                    </div>
-                  )}
-                  
-                  <p className="text-xs text-white/60">
-                    Connect your Petra wallet to automatically fill your Aptos address. 
-                    Don't have Petra? <a 
-                      href="https://chrome.google.com/webstore/detail/petra-aptos-wallet/ejjladinnckdgjemekebdpeokbikhfci" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="underline hover:no-underline"
-                    >
-                      Install it here
-                    </a>
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-green-900/20 border border-green-400/20 rounded">
-                    <div>
-                      <p className="text-green-400 text-sm font-medium">Connected</p>
-                      <p className="text-white/80 text-xs font-mono">{formattedAddress}</p>
-                    </div>
+        {/* Wallet Connection Section - Always Required */}
+        <div className="space-y-4">
+          <div className="border border-white/20 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-white mb-3">
+              Petra Wallet <span className="text-red-400">*</span>
+            </h4>
+            
+            {!isConnected ? (
+              <div className="space-y-3">
+                <button
+                  onClick={handleWalletConnect}
+                  disabled={isConnecting}
+                  className="w-full px-4 py-3 bg-transparent border border-white text-white text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isConnecting ? "Connecting..." : "Connect Petra Wallet"}
+                </button>
+                
+                {walletError && (
+                  <div className="text-red-400 text-xs p-2 border border-red-400/20 rounded">
+                    {walletError}
                     <button
-                      onClick={disconnect}
-                      className="text-white/60 hover:text-white text-xs underline"
+                      onClick={clearError}
+                      className="ml-2 underline hover:no-underline"
                     >
-                      Disconnect
+                      Dismiss
                     </button>
                   </div>
-                  
-                  <p className="text-xs text-white/60">
-                    Your wallet address will be automatically included with your submission.
-                  </p>
+                )}
+                
+                <p className="text-xs text-white/60">
+                  Petra wallet connection is required to join the waitlist. 
+                  Don't have Petra? <a 
+                    href="https://chrome.google.com/webstore/detail/petra-aptos-wallet/ejjladinnckdgjemekebdpeokbikhfci" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="underline hover:no-underline"
+                  >
+                    Install it here
+                  </a>
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-green-900/20 border border-green-400/20 rounded">
+                  <div>
+                    <p className="text-green-400 text-sm font-medium">✓ Connected</p>
+                    <p className="text-white/80 text-xs font-mono">{formattedAddress}</p>
+                  </div>
+                  <button
+                    onClick={disconnect}
+                    className="text-white/60 hover:text-white text-xs underline"
+                  >
+                    Disconnect
+                  </button>
                 </div>
-              )}
-            </div>
+                
+                <p className="text-xs text-green-400/80">
+                  Great! Your wallet address will be saved with your waitlist entry.
+                </p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
         
         <button
           type="submit"
-          disabled={status === "loading" || (mode === "wallet" && !isConnected)}
+          disabled={status === "loading" || !isConnected || !email}
           className="px-5 py-3 bg-white text-black text-sm uppercase tracking-widest hover:bg-neutral-200 transition-colors disabled:opacity-70"
         >
           {status === "loading" ? "Submitting..." : 
-           mode === "wallet" && !isConnected ? "Connect Wallet First" : 
-           "Submit"}
+           !isConnected ? "Connect Wallet Required" :
+           !email ? "Enter Email Required" :
+           "Join Waitlist"}
         </button>
         
         {message && (

@@ -31,7 +31,7 @@ export default function Home() {
               <br />
               MONEY
               <br />
-              MATTER
+              MATTERS
             </h1>
             <p className="text-xl max-w-xl mb-4">
               AI-powered DeFi yield maximizer with native lending on Aptos.
